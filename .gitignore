@@ -1,0 +1,4 @@
+.vscode/
+logs/
+*.db
+dump.txt
