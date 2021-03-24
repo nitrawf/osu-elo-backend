@@ -1,14 +1,15 @@
 import requests
 import os
-from utils import getLogger
+import logging
 
-class osuApi():
+logger = logging.getLogger(f'eloApp.{__name__}')
+
+class OsuApi():
     def __init__(self, clientId=os.environ.get('OSU_CLIENT_ID'), clientSecret=os.environ.get('OSU_CLIENT_SECRET'), grantType="client_credentials", scope="public"):
         self.clientId = clientId
         self.clientSecret = clientSecret
         self.grantType = grantType
         self.scope = scope
-        self.logger = getLogger('eloApp', __name__)
         self.baseUrl = "https://osu.ppy.sh/api/v2/"
         self.token = None
         
@@ -28,7 +29,7 @@ class osuApi():
             data = r.json()
             token = data.get('access_token')
         except Exception as e:
-            self.logger.exception(e)
+            logger.exception(e)
             return
 
         self.token = token

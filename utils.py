@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from models import *
+from models import Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema
 
 def getLogger(appName, moduleName=None):
     if moduleName != None:
@@ -28,6 +28,7 @@ def getLogger(appName, moduleName=None):
 
 logger = getLogger('eloApp', __name__)
 
+
 def parseMatch(data):   
     match = Match()
     match_ = data['match']
@@ -48,6 +49,15 @@ def parseMatch(data):
     db.session.add(match)
     db.session.commit()
 
+def getMatchDetails(data):
+    playerList = parsePlayers(data['users'])
+    beatmapList = parseBeatmaps(data['events'])
+    return {
+        'players' : [playerSchema.dump(x) for x in playerList],
+        'beatmaps' : [beatmapSchema.dump(x) for x in beatmapList]
+    }
+
+
 def parsePlayers(users):
     playerList = []
     for user in users:
@@ -59,6 +69,24 @@ def parsePlayers(users):
             player.country = user['country_code']
         playerList.append(player)
     return playerList
+
+def parseBeatmaps(events):
+    beatmapList = []
+    for event in events:
+        if 'game' in event:
+            game_ = event['game']
+            beatmap_ = game_['beatmap']
+            beatmap = Beatmap()
+            beatmap.id = beatmap_['beatmapset']['id']
+            beatmap.sr = beatmap_['difficulty_rating']
+            beatmap.creator = beatmap_['beatmapset']['creator']
+            beatmap.artist = beatmap_['beatmapset']['artist']
+            beatmap.title = beatmap_['beatmapset']['title']
+            beatmap.bg = beatmap_['beatmapset']['covers']['list@2x']
+            beatmap.version = beatmap_['version']
+            beatmapList.append(beatmap)
+    return beatmapList
+
 
 def parseGames(events, matchId):
     gameList = []

@@ -1,10 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
-
+from OsuApi import OsuApi
 
 db = SQLAlchemy()
 ma = Marshmallow()
 
+api = OsuApi()
+api.connect()
 
 player_match_xref = db.Table('player_match_xref',
     db.Column('playerId', db.Integer, db.ForeignKey('player.id'), primary_key = True),
@@ -30,15 +32,28 @@ class Game(db.Model):
     scores = db.relationship('Score', backref='game', lazy=True)
     mods = db.Column(db.String(256))
     matchId = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
+    beatmap = db.relationship('Beatmap', backref='game', lazy=True, uselist=False)
+    
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     score = db.Column(db.Integer)
-    accuray = db.Column(db.Integer)
+    accuray = db.Column(db.Float)
     position = db.Column(db.Integer)
     mods = db.Column(db.String(256))
     playerId = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
     gameId = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    
+
+class Beatmap(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    sr = db.Column(db.Float)
+    artist = db.Column(db.String(256))
+    creator = db.Column(db.String(256))
+    title = db.Column(db.String(256))
+    version = db.Column(db.String(256))
+    bg = db.Column(db.String(1024))
+    gameId =  db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
 
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
@@ -56,6 +71,18 @@ class PlayerSchema(ma.SQLAlchemyAutoSchema):
         model = Player
         load_instance = True
 
+class BeatmapSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Beatmap
+        load_instance = True
+
+class ScoreSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Score
+        load_instance = True
+
 matchSchema = MatchSchema()
 playerSchema = PlayerSchema()
 gameSchema = GameSchema()
+beatmapSchema = BeatmapSchema()
+scoreSchema = ScoreSchema()
