@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from models import Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema
+from models import Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema
 
 def getLogger(appName, moduleName=None):
     if moduleName != None:
@@ -18,7 +18,7 @@ def getLogger(appName, moduleName=None):
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(asctime)s - %(name)s.%(lineno)d - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     ch.setFormatter(formatter)
     # add the handlers to the logger
@@ -29,7 +29,7 @@ def getLogger(appName, moduleName=None):
 logger = getLogger('eloApp', __name__)
 
 
-def parseMatch(data):   
+def parseMatch(data, filteredGameList, filteredPlayerList):   
     match = Match()
     match_ = data['match']
     match.id = match_['id']
@@ -40,14 +40,18 @@ def parseMatch(data):
     users = data['users']
     events = data['events']
     
-    playerList = parsePlayers(users)
-    gameList = parseGames(events, match.id)
+    playerList = parsePlayers(users, filteredPlayerList)
+    gameList, beatmapList = parseGames(events, match.id, filteredGameList)
 
+    
     match.players = playerList
     match.games = gameList
-
+    
+    db.session.add_all(beatmapList)
     db.session.add(match)
     db.session.commit()
+
+
 
 def getMatchDetails(data):
     playerList = parsePlayers(data['users'])
@@ -58,9 +62,12 @@ def getMatchDetails(data):
     }
 
 
-def parsePlayers(users):
+def parsePlayers(users, filter=None):
     playerList = []
     for user in users:
+        logger.debug(user['id'])
+        if filter is not None and user['id'] not in filter:
+            continue
         player = Player.query.get(user['id'])
         if player is None:
             player = Player()
@@ -70,36 +77,48 @@ def parsePlayers(users):
         playerList.append(player)
     return playerList
 
+
 def parseBeatmaps(events):
     beatmapList = []
     for event in events:
         if 'game' in event:
             game_ = event['game']
             beatmap_ = game_['beatmap']
-            beatmap = Beatmap()
-            beatmap.id = beatmap_['beatmapset']['id']
-            beatmap.sr = beatmap_['difficulty_rating']
-            beatmap.creator = beatmap_['beatmapset']['creator']
-            beatmap.artist = beatmap_['beatmapset']['artist']
-            beatmap.title = beatmap_['beatmapset']['title']
-            beatmap.bg = beatmap_['beatmapset']['covers']['list@2x']
-            beatmap.version = beatmap_['version']
+            beatmap = parseBeatmap(beatmap_)
             beatmapList.append(beatmap)
     return beatmapList
 
+def parseBeatmap(beatmap_):
+    beatmap = Beatmap()
+    beatmap.id = beatmap_['beatmapset']['id']
+    beatmap.sr = beatmap_['difficulty_rating']
+    beatmap.creator = beatmap_['beatmapset']['creator']
+    beatmap.artist = beatmap_['beatmapset']['artist']
+    beatmap.title = beatmap_['beatmapset']['title']
+    beatmap.bg = beatmap_['beatmapset']['covers']['list@2x']
+    beatmap.version = beatmap_['version']
+    return beatmap
 
-def parseGames(events, matchId):
+def parseGames(events, matchId, filter=None):
     gameList = []
+    beatmapList = []
     for event in events:
         if 'game' in event:
             game_ = event['game']
+            beatmap_ = game_['beatmap']
+            if filter is not None and beatmap_['beatmapset']['id'] not in filter:
+                continue
+            beatmap = parseBeatmap(beatmap_)
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
             game.matchId = matchId
             game.scores = parseScores(game_['scores'], game.id)
+            game.beatmapId = beatmap.id
             gameList.append(game)
-    return gameList
+            beatmapList.append(beatmap) 
+    return gameList, beatmapList
+
 
 def parseScores(scores, gameId):
     scoreList = []
@@ -109,10 +128,15 @@ def parseScores(scores, gameId):
         score = Score()
         score.id = score_['id']
         score.score = score_['score']
-        score.accuray = score_['accuracy']
+        score.accuracy = score_['accuracy']
         score.mods = ', '.join(score_['mods'])
         score.playerId = score_['user_id']
         score.gameId = gameId
         score.position = i + 1
         scoreList.append(score)
     return scoreList
+
+def fetchMatchSummary(id):
+    matchSummary = MatchSummary.query.filter_by(matchId = id).all()
+    logger.debug(matchSummary)
+    return [matchSummarySchema.dump(x) for x in matchSummary]

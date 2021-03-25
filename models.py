@@ -21,30 +21,32 @@ class Match(db.Model):
     players = db.relationship('Player', secondary=player_match_xref, lazy='subquery', backref=db.backref('matches', lazy=True))
     games = db.relationship('Game', backref='match', lazy=True)
 
+
 class Player(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(256))
     country = db.Column(db.String(256))
     scores = db.relationship('Score', backref='player', lazy=True)
 
+
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     scores = db.relationship('Score', backref='game', lazy=True)
     mods = db.Column(db.String(256))
     matchId = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
-    beatmap = db.relationship('Beatmap', backref='game', lazy=True, uselist=False)
-    
+    beatmapId = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
+
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     score = db.Column(db.Integer)
-    accuray = db.Column(db.Float)
+    accuracy = db.Column(db.Float)
     position = db.Column(db.Integer)
     mods = db.Column(db.String(256))
     playerId = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
     gameId = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+   
     
-
 class Beatmap(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     sr = db.Column(db.Float)
@@ -53,7 +55,17 @@ class Beatmap(db.Model):
     title = db.Column(db.String(256))
     version = db.Column(db.String(256))
     bg = db.Column(db.String(1024))
-    gameId =  db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+
+
+class MatchSummary(db.Model):
+    __tablename__ = 'matchSummary'
+    playerId = db.Column(db.Integer, primary_key = True)
+    matchId = db.Column(db.Integer, primary_key = True)
+    playerName =  db.Column(db.String(256))
+    totalScore = db.Column(db.Integer)
+    averageScore = db.Column(db.Float)
+    averageAccuracy = db.Column(db.Float)
+    averagePosition = db.Column(db.Float)
 
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
@@ -81,8 +93,14 @@ class ScoreSchema(ma.SQLAlchemyAutoSchema):
         model = Score
         load_instance = True
 
+class MatchSummarySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = MatchSummary
+        load_instance = True
+
 matchSchema = MatchSchema()
 playerSchema = PlayerSchema()
 gameSchema = GameSchema()
 beatmapSchema = BeatmapSchema()
 scoreSchema = ScoreSchema()
+matchSummarySchema = MatchSummarySchema()

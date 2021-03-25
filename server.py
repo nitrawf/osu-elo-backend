@@ -2,7 +2,7 @@ from utils import getLogger
 from flask import Flask
 import os
 from models import db, ma
-from routes.newMatchRoute import newMatchBlueprint
+from routes.matchRoute import matchBlueprint
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -14,11 +14,32 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 ma.init_app(app)
 
-app.register_blueprint(newMatchBlueprint)
+app.register_blueprint(matchBlueprint)
 
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        conn = db.engine.connect()
+        try:
+            conn.execute('drop table if exists matchSummary')
+        except:
+            pass
+        conn.execute(f'''
+        create view if not EXISTS matchSummary
+        as 
+        select
+        player.id as playerId,
+        match.id as matchId,
+        player.name as playerName,
+        sum(score.score) as totalScore, 
+        round(avg(score.position), 2) as averagePosition,
+        round(avg(score.score), 2) as averageScore,
+        round(avg(score.accuracy), 2) as averageAccuracy
+        from match INNER join game on match.id = game.matchId 
+        inner join score on game.id = score.gameId 
+        inner join player on player.id = score.playerId
+        group by playerId, matchId;''')
+        
     logger = getLogger('eloApp') 
     app.run()
