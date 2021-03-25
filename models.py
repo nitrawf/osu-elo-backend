@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
-from OsuApi import OsuApi
+from osuApi import OsuApi
 
 db = SQLAlchemy()
 ma = Marshmallow()
