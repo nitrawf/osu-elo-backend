@@ -1,5 +1,6 @@
 from utils import getLogger
 from flask import Flask, jsonify
+from flask_cors import CORS
 import os
 from models import db, ma
 from routes.matchRoute import matchBlueprint
@@ -10,6 +11,7 @@ app.secret_key = os.environ.get('SECRET_KEY')
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.getcwd()}/serverdb.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+CORS(app)
 
 db.init_app(app)
 ma.init_app(app)
