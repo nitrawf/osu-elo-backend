@@ -1,5 +1,5 @@
 from utils import getLogger
-from flask import Flask
+from flask import Flask, jsonify
 import os
 from models import db, ma
 from routes.matchRoute import matchBlueprint
@@ -15,6 +15,10 @@ db.init_app(app)
 ma.init_app(app)
 
 app.register_blueprint(matchBlueprint)
+
+@app.route('/')
+def hello():
+    return jsonify("Hello there")
 
 
 if __name__ == "__main__":
