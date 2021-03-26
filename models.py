@@ -59,14 +59,42 @@ class Beatmap(db.Model):
 
 class MatchSummary(db.Model):
     __tablename__ = 'match_summary'
-    player_id = db.Column(db.Integer, primary_key = True)
-    match_id = db.Column(db.Integer, primary_key = True)
+    player_id = db.Column(db.Integer, primary_key=True)
+    match_id = db.Column(db.Integer, primary_key=True)
     player_name =  db.Column(db.String(256))
     total_score = db.Column(db.Integer)
     average_score = db.Column(db.Float)
     average_accuracy = db.Column(db.Float)
     average_position = db.Column(db.Float)
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key = True)
+    username = db.Column(db.String(256), unique=True, nullable=False)
+    password = db.Column(db.String(256), nullable=False)
+    roles = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True, server_default='true')
+
+    @property
+    def rolenames(self):
+        try:
+            return self.roles.split(',')
+        except Exception:
+            return []
+
+    @classmethod
+    def lookup(cls, username):
+        return cls.query.filter_by(username=username).one_or_none()
+    
+    @classmethod
+    def identify(cls, id):
+        return cls.query.get(id)
+    
+    @property
+    def identity(self):
+        return self.id
+
+    def is_valid(self):
+        return self.is_active
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -96,6 +124,11 @@ class ScoreSchema(ma.SQLAlchemyAutoSchema):
 class MatchSummarySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = MatchSummary
+        load_instance = True
+
+class UserSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = User
         load_instance = True
 
 matchSchema = MatchSchema()
