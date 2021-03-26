@@ -16,8 +16,8 @@ player_match_xref = db.Table('player_match_xref',
 class Match(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(256))
-    startTime = db.Column(db.DateTime())
-    endTime = db.Column(db.DateTime())
+    start_time = db.Column(db.DateTime())
+    end_time = db.Column(db.DateTime())
     players = db.relationship('Player', secondary=player_match_xref, lazy='subquery', backref=db.backref('matches', lazy=True))
     games = db.relationship('Game', backref='match', lazy=True)
 
@@ -33,8 +33,8 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     scores = db.relationship('Score', backref='game', lazy=True)
     mods = db.Column(db.String(256))
-    matchid = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
-    beatmapid = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
+    match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
+    beatmap_id = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
 
 
 class Score(db.Model):
@@ -43,8 +43,8 @@ class Score(db.Model):
     accuracy = db.Column(db.Float)
     position = db.Column(db.Integer)
     mods = db.Column(db.String(256))
-    playerid = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
-    gameid = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
+    game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
    
     
 class Beatmap(db.Model):
@@ -59,13 +59,13 @@ class Beatmap(db.Model):
 
 class MatchSummary(db.Model):
     __tablename__ = 'match_summary'
-    playerid = db.Column(db.Integer, primary_key = True)
-    matchid = db.Column(db.Integer, primary_key = True)
-    playerName =  db.Column(db.String(256))
-    totalScore = db.Column(db.Integer)
-    averageScore = db.Column(db.Float)
-    averageAccuracy = db.Column(db.Float)
-    averagePosition = db.Column(db.Float)
+    player_id = db.Column(db.Integer, primary_key = True)
+    match_id = db.Column(db.Integer, primary_key = True)
+    player_name =  db.Column(db.String(256))
+    total_score = db.Column(db.Integer)
+    average_score = db.Column(db.Float)
+    average_accuracy = db.Column(db.Float)
+    average_position = db.Column(db.Float)
 
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):

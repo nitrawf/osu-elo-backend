@@ -34,8 +34,8 @@ def parseMatch(data, filteredGameList, filteredPlayerList):
     match_ = data['match']
     match.id = match_['id']
     match.name = match_['name']
-    match.startTime = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z")
-    match.endTime = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z")
+    match.start_time = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z")
+    match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z")
 
     users = data['users']
     events = data['events']
@@ -65,7 +65,6 @@ def getMatchDetails(data):
 def parsePlayers(users, filter=None):
     playerList = []
     for user in users:
-        logger.debug(user['id'])
         if filter is not None and user['id'] not in filter:
             continue
         player = Player.query.get(user['id'])
@@ -112,9 +111,9 @@ def parseGames(events, matchid, filter=None):
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
-            game.matchid = matchid
+            game.match_id = matchid
             game.scores = parseScores(game_['scores'], game.id)
-            game.beatmapid = beatmap.id
+            game.beatmap_id = beatmap.id
             gameList.append(game)
             beatmapList.append(beatmap) 
     return gameList, beatmapList
@@ -130,13 +129,13 @@ def parseScores(scores, gameid):
         score.score = score_['score']
         score.accuracy = score_['accuracy']
         score.mods = ', '.join(score_['mods'])
-        score.playerid = score_['user_id']
-        score.gameid = gameid
+        score.player_id = score_['user_id']
+        score.game_id = gameid
         score.position = i + 1
         scoreList.append(score)
     return scoreList
 
 def fetchMatchSummary(id):
-    matchSummary = MatchSummary.query.filter_by(matchid = id).all()
+    matchSummary = MatchSummary.query.filter_by(match_id = id).all()
     logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]
