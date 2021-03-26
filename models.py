@@ -9,8 +9,8 @@ api = OsuApi()
 api.connect()
 
 player_match_xref = db.Table('player_match_xref',
-    db.Column('playerId', db.Integer, db.ForeignKey('player.id'), primary_key = True),
-    db.Column('matchId', db.Integer, db.ForeignKey('match.id'), primary_key = True)
+    db.Column('playerid', db.Integer, db.ForeignKey('player.id'), primary_key = True),
+    db.Column('matchid', db.Integer, db.ForeignKey('match.id'), primary_key = True)
 )
 
 class Match(db.Model):
@@ -33,8 +33,8 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     scores = db.relationship('Score', backref='game', lazy=True)
     mods = db.Column(db.String(256))
-    matchId = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
-    beatmapId = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
+    matchid = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
+    beatmapid = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
 
 
 class Score(db.Model):
@@ -43,8 +43,8 @@ class Score(db.Model):
     accuracy = db.Column(db.Float)
     position = db.Column(db.Integer)
     mods = db.Column(db.String(256))
-    playerId = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
-    gameId = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
+    playerid = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
+    gameid = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
    
     
 class Beatmap(db.Model):
@@ -58,9 +58,9 @@ class Beatmap(db.Model):
 
 
 class MatchSummary(db.Model):
-    __tablename__ = 'matchSummary'
-    playerId = db.Column(db.Integer, primary_key = True)
-    matchId = db.Column(db.Integer, primary_key = True)
+    __tablename__ = 'match_summary'
+    playerid = db.Column(db.Integer, primary_key = True)
+    matchid = db.Column(db.Integer, primary_key = True)
     playerName =  db.Column(db.String(256))
     totalScore = db.Column(db.Integer)
     averageScore = db.Column(db.Float)

@@ -99,7 +99,7 @@ def parseBeatmap(beatmap_):
     beatmap.version = beatmap_['version']
     return beatmap
 
-def parseGames(events, matchId, filter=None):
+def parseGames(events, matchid, filter=None):
     gameList = []
     beatmapList = []
     for event in events:
@@ -112,15 +112,15 @@ def parseGames(events, matchId, filter=None):
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
-            game.matchId = matchId
+            game.matchid = matchid
             game.scores = parseScores(game_['scores'], game.id)
-            game.beatmapId = beatmap.id
+            game.beatmapid = beatmap.id
             gameList.append(game)
             beatmapList.append(beatmap) 
     return gameList, beatmapList
 
 
-def parseScores(scores, gameId):
+def parseScores(scores, gameid):
     scoreList = []
     scores = sorted(scores, key=lambda x: x['score'], reverse=True)
     for i in range(len(scores)):
@@ -130,13 +130,13 @@ def parseScores(scores, gameId):
         score.score = score_['score']
         score.accuracy = score_['accuracy']
         score.mods = ', '.join(score_['mods'])
-        score.playerId = score_['user_id']
-        score.gameId = gameId
+        score.playerid = score_['user_id']
+        score.gameid = gameid
         score.position = i + 1
         scoreList.append(score)
     return scoreList
 
 def fetchMatchSummary(id):
-    matchSummary = MatchSummary.query.filter_by(matchId = id).all()
+    matchSummary = MatchSummary.query.filter_by(matchid = id).all()
     logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]

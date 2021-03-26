@@ -11,7 +11,7 @@ app.secret_key = os.environ.get('SECRET_KEY')
 #app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.getcwd()}/serverdb.db'
 #app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL_POSTGRES')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 
@@ -33,24 +33,41 @@ if __name__ == "__main__":
         db.create_all()
         conn = db.engine.connect()
         try:
-            conn.execute('drop table if exists matchSummary')
+            conn.execute('drop table if exists match_summary')
         except:
             pass
+        # conn.execute(f'''
+        # create or replace view match_summary
+        # as 
+        # select
+        # player.id as playerid,
+        # match.id as matchid,
+        # player.name as player_name,
+        # sum(score.score) as total_score, 
+        # round(avg(score.position), 2) as average_position,
+        # round(avg(score.score), 2) as average_score,
+        # round(avg(score.accuracy), 2) as average_accuracy
+        # from match INNER join game on match.id = game.matchid
+        # inner join score on game.id = score.gameid 
+        # inner join player on player.id = score.playerid
+        # group by playerid, matchid;''')
         conn.execute(f'''
-        create view if not EXISTS matchSummary
+        create or replace view match_summary
         as 
         select
-        player.id as playerId,
-        match.id as matchId,
-        player.name as playerName,
-        sum(score.score) as totalScore, 
-        round(avg(score.position), 2) as averagePosition,
-        round(avg(score.score), 2) as averageScore,
-        round(avg(score.accuracy), 2) as averageAccuracy
-        from match INNER join game on match.id = game.matchId 
-        inner join score on game.id = score.gameId 
-        inner join player on player.id = score.playerId
-        group by playerId, matchId;''')
+        player.id as playerid,
+        match.id as matchid,
+        player.name as player_name,
+        sum(score.score) as total_score, 
+        round(cast(avg(score.position) as numeric), 2) as average_position,
+        round(cast(avg(score.score) as numeric), 2) as average_score,
+        round(cast(avg(score.accuracy) as numeric), 2) as average_accuracy
+        from match INNER join game on match.id = game.matchid
+        inner join score on game.id = score.gameid 
+        inner join player on player.id = score.playerid
+        group by player.id, match.id;
+        ''')
+
         
     logger = getLogger('eloApp') 
     app.run()
