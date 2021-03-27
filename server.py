@@ -25,6 +25,7 @@ db.init_app(app)
 ma.init_app(app)
 
 app.register_blueprint(matchBlueprint)
+logger = getLogger('eloApp') 
 
 @app.route('/')
 def hello():
@@ -77,7 +78,4 @@ if __name__ == "__main__":
                 roles='admin'
             ))
         db.session.commit()
-
-        
-    logger = getLogger('eloApp') 
     app.run()
