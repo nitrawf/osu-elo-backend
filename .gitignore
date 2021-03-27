@@ -1,4 +1,6 @@
 .vscode/
 logs/
 *.db
+__pycache__/
 dump.txt
+createUser.py

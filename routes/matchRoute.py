@@ -3,12 +3,14 @@ from flask import Blueprint, jsonify, g
 from flask.globals import request
 from utils import getMatchDetails, parseMatch, getLogger, fetchMatchSummary
 from models import Match, matchSchema, api
+from flask_praetorian import auth_required
 
 matchBlueprint = Blueprint('addMatch', __name__, url_prefix='/api/match/')
 logger = getLogger('eloApp', __name__) 
 
 
 @matchBlueprint.route('new/get-details/<matchId>')
+@auth_required
 def getMatch(matchId):
     logger.info(f'Processing match {matchId}.')
     if Match.query.get(matchId) is not None:
@@ -17,6 +19,7 @@ def getMatch(matchId):
     return getMatchDetails(resp) 
 
 @matchBlueprint.route('new/process-match', methods = ['POST'])
+@auth_required
 def processMatch():
     data = request.json
     matchId = data.get('matchId')

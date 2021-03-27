@@ -4,7 +4,6 @@ from osuApi import OsuApi
 
 db = SQLAlchemy()
 ma = Marshmallow()
-
 api = OsuApi()
 api.connect()
 

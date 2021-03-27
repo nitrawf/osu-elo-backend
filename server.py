@@ -3,12 +3,14 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
 from models import db, ma, User
-from routes.matchRoute import matchBlueprint
 from flask_praetorian import Praetorian
+from routes.matchRoute import matchBlueprint
+import queries
+
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["JWT_ACCESS_LIFESPAN"] = {'hours' : 24}
-app.config['JWT_REFRESH_LIFESPAN'] = {'days': 30}
+app.config['JWT_REFRESH_LIFESPAN'] = {'days' : 30}
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 guard = Praetorian()
@@ -64,29 +66,14 @@ if __name__ == "__main__":
         db.create_all()
         conn = db.engine.connect()
         try:
-            conn.execute('drop table if exists match_summary')
+            conn.execute(queries.drop_match_summary_table)
         except:
             pass
-        conn.execute(f'''
-        create or replace view match_summary
-        as 
-        select
-        player.id as player_id,
-        match.id as match_id,
-        player.name as player_name,
-        sum(score.score) as total_score, 
-        round(cast(avg(score.position) as numeric), 2) as average_position,
-        round(cast(avg(score.score) as numeric), 2) as average_score,
-        round(cast(avg(score.accuracy) as numeric), 2) as average_accuracy
-        from match INNER join game on match.id = game.match_id
-        inner join score on game.id = score.game_id 
-        inner join player on player.id = score.player_id
-        group by player.id, match.id;
-        ''')
+        conn.execute(queries.create_match_summary_view)
         if User.query.filter_by(username='admin').count() < 1:
             db.session.add(User(
                 username='admin',
-                password=guard.hash_password('akelakela'),
+                password=guard.hash_password(os.environ.get('ADMIN_PW')),
                 roles='admin'
             ))
         db.session.commit()
