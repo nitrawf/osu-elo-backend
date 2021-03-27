@@ -41,13 +41,14 @@ def parseMatch(data, filteredGameList, filteredPlayerList):
     events = data['events']
     
     playerList = parsePlayers(users, filteredPlayerList)
-    gameList, beatmapList = parseGames(events, match.id, filteredGameList)
+    gameList, beatmapList = parseGames(events, match.id, filteredGameList, filteredPlayerList)
 
     
     match.players = playerList
     match.games = gameList
     
-    db.session.add_all(beatmapList)
+    if len(beatmapList) > 0:
+        db.session.add_all(beatmapList)
     db.session.add(match)
     db.session.commit()
 
@@ -98,41 +99,43 @@ def parseBeatmap(beatmap_):
     beatmap.version = beatmap_['version']
     return beatmap
 
-def parseGames(events, matchid, filter=None):
+def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
     gameList = []
     beatmapList = []
     for event in events:
         if 'game' in event:
             game_ = event['game']
             beatmap_ = game_['beatmap']
-            if filter is not None and beatmap_['beatmapset']['id'] not in filter:
+            if filterBeatmap is not None and beatmap_['beatmapset']['id'] not in filterBeatmap:
                 continue
             beatmap = parseBeatmap(beatmap_)
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
             game.match_id = matchid
-            game.scores = parseScores(game_['scores'], game.id)
+            game.scores = parseScores(game_['scores'], game.id, filterPlayer)
             game.beatmap_id = beatmap.id
             gameList.append(game)
-            beatmapList.append(beatmap) 
+            if Beatmap.query.get(beatmap.id) is None:
+                beatmapList.append(beatmap) 
     return gameList, beatmapList
 
 
-def parseScores(scores, gameid):
+def parseScores(scores, gameid , filter):
     scoreList = []
     scores = sorted(scores, key=lambda x: x['score'], reverse=True)
     for i in range(len(scores)):
         score_ = scores[i]
-        score = Score()
-        score.id = score_['id']
-        score.score = score_['score']
-        score.accuracy = score_['accuracy']
-        score.mods = ', '.join(score_['mods'])
-        score.player_id = score_['user_id']
-        score.game_id = gameid
-        score.position = i + 1
-        scoreList.append(score)
+        if score_['user_id'] in filter:
+            score = Score()
+            score.id = score_['id']
+            score.score = score_['score']
+            score.accuracy = score_['accuracy']
+            score.mods = ', '.join(score_['mods'])
+            score.player_id = score_['user_id']
+            score.game_id = gameid
+            score.position = i + 1
+            scoreList.append(score)
     return scoreList
 
 def fetchMatchSummary(id):

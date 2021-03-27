@@ -17,8 +17,8 @@ class Match(db.Model):
     name = db.Column(db.String(256))
     start_time = db.Column(db.DateTime())
     end_time = db.Column(db.DateTime())
-    players = db.relationship('Player', secondary=player_match_xref, lazy='subquery', backref=db.backref('matches', lazy=True))
-    games = db.relationship('Game', backref='match', lazy=True)
+    players = db.relationship('Player', secondary=player_match_xref, lazy='subquery', backref=db.backref('matches', lazy=True), cascade="all, delete")
+    games = db.relationship('Game', backref='match', lazy=True, cascade="all, delete-orphan")
 
 
 class Player(db.Model):
@@ -30,7 +30,7 @@ class Player(db.Model):
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    scores = db.relationship('Score', backref='game', lazy=True)
+    scores = db.relationship('Score', backref='game', lazy=True, cascade="all, delete-orphan")
     mods = db.Column(db.String(256))
     match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
     beatmap_id = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
