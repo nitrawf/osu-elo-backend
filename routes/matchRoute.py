@@ -1,11 +1,11 @@
 from re import match
 from flask import Blueprint, jsonify, g
 from flask.globals import request
-from utils import getMatchDetails, parseMatch, getLogger, fetchMatchSummary
+from utils import getMatchDetails, parseMatch, getLogger, fetchMatchSummary, calculateEloChange
 from models import Match, matchSchema, api, db
 from flask_praetorian import auth_required
 
-matchBlueprint = Blueprint('addMatch', __name__, url_prefix='/api/match/')
+matchBlueprint = Blueprint('matchbp', __name__, url_prefix='/api/match/')
 logger = getLogger('eloApp', __name__) 
 
 
@@ -14,7 +14,7 @@ logger = getLogger('eloApp', __name__)
 def getMatch(matchId):
     logger.info(f'Processing match {matchId}.')
     if Match.query.get(matchId) is not None:
-        return {'error' : 'Match Already Exists'}, 204
+        return {'error' : 'Match Already Exists'}
     resp = api.getMatch(matchId)
     return getMatchDetails(resp) 
 
@@ -25,10 +25,12 @@ def processMatch():
     matchId = data.get('matchId')
     filterdBeatmapList = set([int(x) for x in data.get('filteredBeatmapList')])
     filteredPlayerList = set([int(x) for x in data.get('filteredPlayerList')])
+    defaultElo = data.get('defaultElo', 1000)
     logger.info(f'Processing match {matchId}.')
     resp = api.getMatch(matchId)
-    parseMatch(resp, filterdBeatmapList, filteredPlayerList)
+    parseMatch(resp, filterdBeatmapList, filteredPlayerList, defaultElo)
     match = Match.query.get(matchId)
+    calculateEloChange(match)
     return jsonify(matchSchema.dump(match))
 
 @matchBlueprint.route('delete/<matchId>')
@@ -36,7 +38,7 @@ def processMatch():
 def deleteMatch(matchId):
     match = Match.query.get(matchId)
     if match is None:
-        return {'error' : 'User not found'}, 400
+        return {'error' : 'User not found'}
     try:
         db.session.delete(match)
         db.session.commit()
@@ -68,5 +70,19 @@ def getMatchSummary(matchId):
 def getMatches():
     matches = Match.query.all()
     return jsonify([matchSchema.dump(x) for x in matches])
+
+@matchBlueprint.route('calculate-elo/<matchId>')
+@auth_required
+def eloChange(matchId):
+    match = Match.query.get(matchId)
+    try:
+        calculateEloChange(match)
+        return jsonify('success'), 200
+    except Exception as e:
+        logger.exception(e)
+        return jsonify('fail'), 500
+
+
+
 
 

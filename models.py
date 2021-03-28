@@ -25,6 +25,7 @@ class Player(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(256))
     country = db.Column(db.String(256))
+    elo = db.Column(db.Integer)
     scores = db.relationship('Score', backref='player', lazy=True)
 
 
@@ -32,6 +33,7 @@ class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     scores = db.relationship('Score', backref='game', lazy=True, cascade="all, delete-orphan")
     mods = db.Column(db.String(256))
+    avg_elo = db.Column(db.Integer)
     match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
     beatmap_id = db.Column(db.Integer, db.ForeignKey('beatmap.id'), nullable=False)
 
@@ -42,6 +44,7 @@ class Score(db.Model):
     accuracy = db.Column(db.Float)
     position = db.Column(db.Integer)
     mods = db.Column(db.String(256))
+    points = db.Column(db.Float)
     player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
     game_id = db.Column(db.Integer, db.ForeignKey('game.id'), nullable=False)
    
@@ -60,11 +63,16 @@ class MatchSummary(db.Model):
     __tablename__ = 'match_summary'
     player_id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, primary_key=True)
+    elo_id = db.Column(db.Integer)
     player_name =  db.Column(db.String(256))
     total_score = db.Column(db.Integer)
+    total_points = db.Column(db.Float)
     average_score = db.Column(db.Float)
     average_accuracy = db.Column(db.Float)
     average_position = db.Column(db.Float)
+    elo = db.Column(db.Integer)
+    elo_change = db.Column(db.Integer)
+
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -94,6 +102,37 @@ class User(db.Model):
 
     def is_valid(self):
         return self.is_active
+
+class EloDiff(db.Model):
+    __tablename__ = 'elo_diff'
+    id = db.Column(db.Integer, primary_key=True)
+    ll = db.Column(db.Integer)
+    ul = db.Column(db.Integer)
+    low = db.Column(db.Float)
+    high =  db.Column(db.Float)
+
+class EloHistory(db.Model):
+    __tablename__ = 'elo_history'
+    id = db.Column(db.Integer, primary_key=True)
+    old_elo = db.Column(db.Integer)
+    new_elo = db.Column(db.Integer)
+    elo_change = db.Column(db.Integer)
+    match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
+    player_id = db.Column(db.Integer, db.ForeignKey('player.id'), nullable=False)
+
+class PlayerSummary(db.Model):
+    __tablename__ = 'player_summary'
+    id = db.Column(db.Integer, primary_key=True)
+    name =  db.Column(db.String(256))
+    elo = db.Column(db.Integer)
+    total_score = db.Column(db.Integer)
+    total_points = db.Column(db.Float)
+    maps_played = db.Column(db.Integer)
+    matches_played = db.Column(db.Integer)
+    average_score = db.Column(db.Float)
+    average_accuracy = db.Column(db.Float)
+    average_position = db.Column(db.Float)
+
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -130,9 +169,15 @@ class UserSchema(ma.SQLAlchemyAutoSchema):
         model = User
         load_instance = True
 
+class PlayerSummarySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = PlayerSummary
+        load_instance = True
+
 matchSchema = MatchSchema()
 playerSchema = PlayerSchema()
 gameSchema = GameSchema()
 beatmapSchema = BeatmapSchema()
 scoreSchema = ScoreSchema()
 matchSummarySchema = MatchSummarySchema()
+playerSummarySchema = PlayerSummarySchema()

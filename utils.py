@@ -1,7 +1,10 @@
 import logging
 import os
 from datetime import datetime
-from models import Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema
+import csv
+from models import EloHistory, Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema, EloDiff
+from sqlalchemy.sql import func
+from collections import defaultdict
 
 def getLogger(appName, moduleName=None):
     if moduleName != None:
@@ -29,7 +32,7 @@ def getLogger(appName, moduleName=None):
 logger = getLogger('eloApp', __name__)
 
 
-def parseMatch(data, filteredGameList, filteredPlayerList):   
+def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):   
     match = Match()
     match_ = data['match']
     match.id = match_['id']
@@ -40,7 +43,7 @@ def parseMatch(data, filteredGameList, filteredPlayerList):
     users = data['users']
     events = data['events']
     
-    playerList = parsePlayers(users, filteredPlayerList)
+    playerList = parsePlayers(users, filteredPlayerList, defaultElo)
     gameList, beatmapList = parseGames(events, match.id, filteredGameList, filteredPlayerList)
 
     
@@ -50,6 +53,13 @@ def parseMatch(data, filteredGameList, filteredPlayerList):
     if len(beatmapList) > 0:
         db.session.add_all(beatmapList)
     db.session.add(match)
+    for game in match.games:
+        ''' calculate average player rating for each game, maybe optimization is needed here? '''
+        player_ids = [x[0] for x in db.session.query(Score.player_id).filter(Score.game_id == game.id).all()]
+        z = Player.query.with_entities(func.avg(Player.elo).label('average')).filter(Player.id.in_(player_ids)).one()
+        logger.debug(f'average elo : {z}')
+        game.avg_elo = z.average
+        db.session.add(game)
     db.session.commit()
 
 
@@ -63,7 +73,7 @@ def getMatchDetails(data):
     }
 
 
-def parsePlayers(users, filter=None):
+def parsePlayers(users, filter=None, elo=0):
     playerList = []
     for user in users:
         if filter is not None and user['id'] not in filter:
@@ -74,6 +84,7 @@ def parsePlayers(users, filter=None):
             player.id = user['id']
             player.name = user['username']
             player.country = user['country_code']
+            player.elo = elo
         playerList.append(player)
     return playerList
 
@@ -118,27 +129,83 @@ def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
             gameList.append(game)
             if Beatmap.query.get(beatmap.id) is None:
                 beatmapList.append(beatmap) 
+
     return gameList, beatmapList
 
 
-def parseScores(scores, gameid , filter):
+def parseScores(scoresUnfiltered, gameid , filter):
     scoreList = []
-    scores = sorted(scores, key=lambda x: x['score'], reverse=True)
+    scores = [x for x in scoresUnfiltered if x['user_id'] in filter]
+    scores =  sorted(scores, key=lambda x: x['score'], reverse=True)
     for i in range(len(scores)):
         score_ = scores[i]
-        if score_['user_id'] in filter:
-            score = Score()
-            score.id = score_['id']
-            score.score = score_['score']
-            score.accuracy = score_['accuracy']
-            score.mods = ', '.join(score_['mods'])
-            score.player_id = score_['user_id']
-            score.game_id = gameid
-            score.position = i + 1
-            scoreList.append(score)
+        score = Score()
+        score.id = score_['id']
+        score.score = score_['score']
+        score.accuracy = score_['accuracy']
+        score.mods = ', '.join(score_['mods'])
+        score.player_id = score_['user_id']
+        score.game_id = gameid
+        score.position = i + 1
+        score.points = 1 - ((score.position - 1) / (len(scores) - 1))
+        scoreList.append(score)
     return scoreList
 
 def fetchMatchSummary(id):
     matchSummary = MatchSummary.query.filter_by(match_id = id).all()
     logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]
+
+def calculateEloChange(match : Match):
+    ''' Refer: https://handbook.fide.com/chapter/B022017 for details '''
+    games = match.games
+    delR = defaultdict(lambda : 0)
+    for game in games:
+        numPlayers = len(game.scores)
+        for score in game.scores:
+            player = Player.query.get(score.player_id)
+            playerElo = player.elo
+            opponentElo = round(((game.avg_elo * numPlayers) - playerElo) / (numPlayers - 1))
+            eloDiff = min(abs(playerElo - opponentElo), 400)
+            row = EloDiff.query.filter(EloDiff.ll <= eloDiff, EloDiff.ul >= eloDiff).one()
+            if playerElo >= opponentElo:
+                pd = row.high
+            else:
+                pd = row.low
+            logger.debug(f'score.points : {score.points}, pd : {pd}, change : {score.points - pd}')
+            delR[player.id] += (score.points - pd)
+            logger.debug(f'player elo = {playerElo}, opponent elo = {opponentElo}')
+        logger.debug(delR)
+    for key, value in delR.items():
+        player = Player.query.get(key)
+        change = value * 40 #Fixed as 40 for now
+        eloHistory = EloHistory(
+            old_elo = player.elo,
+            new_elo = player.elo + change,
+            elo_change = change,
+            match_id = match.id,
+            player_id = key
+        )
+        db.session.add(eloHistory)
+        player.elo = player.elo + change
+        db.session.add(player)
+    db.session.commit()
+
+
+
+
+
+def initEloDiff():
+    if EloDiff.query.count() == 0:
+        with open("elo_diff.csv") as f:
+            z = list(csv.reader(f))
+            for i in range(1, len(z)):
+                eloDiff = EloDiff(
+                    ll=z[i][0],
+                    ul=z[i][1],
+                    low=z[i][2],
+                    high=z[i][3]
+                )
+                db.session.add(eloDiff)
+        #db.session.commit()
+

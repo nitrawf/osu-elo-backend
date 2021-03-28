@@ -1,11 +1,15 @@
+from flask.globals import session
 from utils import getLogger
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
-from models import db, ma, User
+from models import db, ma, User, Score, Player
+from utils import initEloDiff
 from flask_praetorian import Praetorian
 from routes.matchRoute import matchBlueprint
+from routes.playerRoute import playerBlueprint
 import queries
+from sqlalchemy.sql import func
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -25,6 +29,7 @@ db.init_app(app)
 ma.init_app(app)
 
 app.register_blueprint(matchBlueprint)
+app.register_blueprint(playerBlueprint)
 logger = getLogger('eloApp') 
 
 @app.route('/')
@@ -70,6 +75,11 @@ if __name__ == "__main__":
             conn.execute(queries.drop_match_summary_table)
         except:
             pass
+        try:
+            conn.execute(queries.drop_player_summary_table)
+        except:
+            pass
+        conn.execute(queries.create_player_summary_view)
         conn.execute(queries.create_match_summary_view)
         if User.query.filter_by(username='admin').count() < 1:
             db.session.add(User(
@@ -77,5 +87,7 @@ if __name__ == "__main__":
                 password=guard.hash_password(os.environ.get('ADMIN_PW')),
                 roles='admin'
             ))
+        initEloDiff()
         db.session.commit()
+       
     app.run()
