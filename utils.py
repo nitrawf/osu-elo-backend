@@ -96,6 +96,7 @@ def parseBeatmaps(events):
             game_ = event['game']
             beatmap_ = game_['beatmap']
             beatmap = parseBeatmap(beatmap_)
+            beatmap.id = game_['id'] # Use game id instead of beatmap id for handling duplicates
             beatmapList.append(beatmap)
     return beatmapList
 
@@ -117,7 +118,7 @@ def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
         if 'game' in event:
             game_ = event['game']
             beatmap_ = game_['beatmap']
-            if filterBeatmap is not None and beatmap_['beatmapset']['id'] not in filterBeatmap:
+            if filterBeatmap is not None and game_['id'] not in filterBeatmap:
                 continue
             beatmap = parseBeatmap(beatmap_)
             game = Game()
