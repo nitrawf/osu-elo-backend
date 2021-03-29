@@ -192,9 +192,6 @@ def calculateEloChange(match : Match):
     db.session.commit()
 
 
-
-
-
 def initEloDiff():
     if EloDiff.query.count() == 0:
         with open("elo_diff.csv") as f:
