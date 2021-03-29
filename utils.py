@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 from models import EloHistory, Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema, EloDiff
 from sqlalchemy.sql import func
@@ -32,13 +32,13 @@ def getLogger(appName, moduleName=None):
 logger = getLogger('eloApp', __name__)
 
 
-def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):   
+def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):
     match = Match()
     match_ = data['match']
     match.id = match_['id']
     match.name = match_['name']
-    match.start_time = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z")
-    match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z")
+    match.start_time = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
+    match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
 
     users = data['users']
     events = data['events']
@@ -201,8 +201,8 @@ def initEloDiff():
                 eloDiff = EloDiff(
                     ll=z[i][0],
                     ul=z[i][1],
-                    low=z[i][2],
-                    high=z[i][3]
+                    high=z[i][2],
+                    low=z[i][3]
                 )
                 db.session.add(eloDiff)
         #db.session.commit()
