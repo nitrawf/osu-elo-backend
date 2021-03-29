@@ -1,4 +1,4 @@
-range_start,range_end,low,high
+range_start,range_end,high,low
 0,3,0.5,0.5
 92,98,0.63,0.37
 198,206,0.76,0.24

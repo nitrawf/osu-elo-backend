@@ -37,9 +37,14 @@ def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):
     match_ = data['match']
     match.id = match_['id']
     match.name = match_['name']
-    match.start_time = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
-    match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
-
+    try:
+        match.start_time = datetime.strptime(match_['start_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
+    except:
+        match.start_time = datetime.strptime("1900-01-01T%00:00:00", "%Y-%m-%dT%H:%M:%S")
+    try:
+        match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
+    except:
+        match.end_time = datetime.strptime("1900-01-01T%00:00:00", "%Y-%m-%dT%H:%M:%S")
     users = data['users']
     events = data['events']
     
