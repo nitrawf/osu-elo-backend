@@ -8,7 +8,6 @@ from utils import initEloDiff
 from flask_praetorian import Praetorian
 from routes.matchRoute import matchBlueprint
 from routes.playerRoute import playerBlueprint
-import queries
 from sqlalchemy.sql import func
 
 app = Flask(__name__)
@@ -20,8 +19,16 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 guard = Praetorian()
 guard.init_app(app, User)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL_POSTGRES')
+#app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL_POSTGRES')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('ELO_DB_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
+
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('mysql'):
+    import queries_mysql as queries
+else:
+    import queries
+
+
 
 CORS(app)
 

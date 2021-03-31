@@ -79,7 +79,7 @@ class User(db.Model):
     username = db.Column(db.String(256), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     roles = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True, server_default='true')
+    is_active = db.Column(db.Boolean, default=True)
 
     @property
     def rolenames(self):

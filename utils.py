@@ -44,7 +44,7 @@ def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):
     try:
         match.end_time = datetime.strptime(match_['end_time'], "%Y-%m-%dT%H:%M:%S%z") + timedelta(hours=5, minutes=30) # To convert utc to ist
     except:
-        match.end_time = datetime.strptime("1900-01-01T00:00:00", "%Y-%m-%dT%H:%M:%S")
+        match.end_time = datetime.strptime("2100-12-12T23:59:59", "%Y-%m-%dT%H:%M:%S")
     users = data['users']
     events = data['events']
     
@@ -215,5 +215,3 @@ def initEloDiff():
                     low=z[i][3]
                 )
                 db.session.add(eloDiff)
-        #db.session.commit()
-

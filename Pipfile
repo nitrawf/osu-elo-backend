@@ -12,6 +12,7 @@ gunicorn = "*"
 flask-cors = "*"
 psycopg2 = "*"
 flask-praetorian = "*"
+mysqlclient = "*"
 
 [dev-packages]
 
