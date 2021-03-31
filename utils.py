@@ -129,19 +129,24 @@ def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
-            game.match_id = matchid
-            game.scores = parseScores(game_['scores'], game.id, filterPlayer)
+            game.match_id = matchid            
+            scores = parseScores(game_['scores'], game.id, filterPlayer)
+            if scores is None:
+                logger.warning(f'Skipping game {game.id} due to less players')
+                continue
+            game.scores = scores
             game.beatmap_id = beatmap.id
             gameList.append(game)
             if Beatmap.query.get(beatmap.id) is None:
                 beatmapList.append(beatmap) 
-
     return gameList, beatmapList
 
 
 def parseScores(scoresUnfiltered, gameid , filter):
     scoreList = []
     scores = [x for x in scoresUnfiltered if x['user_id'] in filter]
+    if len(scores) < 2:# Not counted if only 1 player played the map.
+        return None
     scores =  sorted(scores, key=lambda x: x['score'], reverse=True)
     for i in range(len(scores)):
         score_ = scores[i]
