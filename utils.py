@@ -193,7 +193,7 @@ def calculateEloChange(match : Match):
         #logger.debug(delR)
     for key, value in delR.items():
         player = Player.query.get(key)
-        if Score.query.filter(Score.player_id == player.id).count() < 30:
+        if Score.query.filter(Score.player_id == player.id).count() > 400:
             k = 20
         else:
             k = 40
