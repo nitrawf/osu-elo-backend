@@ -62,7 +62,7 @@ def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):
         ''' calculate average player rating for each game, maybe optimization is needed here? '''
         player_ids = [x[0] for x in db.session.query(Score.player_id).filter(Score.game_id == game.id).all()]
         z = Player.query.with_entities(func.avg(Player.elo).label('average')).filter(Player.id.in_(player_ids)).one()
-        logger.debug(f'average elo : {z}')
+        #logger.debug(f'average elo : {z}')
         game.avg_elo = z.average
         db.session.add(game)
     db.session.commit()
@@ -158,7 +158,7 @@ def parseScores(scoresUnfiltered, gameid , filter):
         score.player_id = score_['user_id']
         score.game_id = gameid
         score.position = i + 1
-        score.points = 1 - ((score.position - 1) / (len(scores) - 1))
+        score.points = 1 - ((score.position - 1) / (len(scores) - 1)) ** 1.2 #More lenient 
         scoreList.append(score)
     return scoreList
 
@@ -175,7 +175,11 @@ def calculateEloChange(match : Match):
         numPlayers = len(game.scores)
         for score in game.scores:
             player = Player.query.get(score.player_id)
-            playerElo = player.elo
+            try:
+                playerElo = player.elo
+            except:
+                logger.error(f'Player Missing: {score.player_id}')
+                raise Exception
             opponentElo = round(((game.avg_elo * numPlayers) - playerElo) / (numPlayers - 1))
             eloDiff = min(abs(playerElo - opponentElo), 400)
             row = EloDiff.query.filter(EloDiff.ll <= eloDiff, EloDiff.ul >= eloDiff).one()
@@ -183,13 +187,17 @@ def calculateEloChange(match : Match):
                 pd = row.high
             else:
                 pd = row.low
-            logger.debug(f'score.points : {score.points}, pd : {pd}, change : {score.points - pd}')
+            #logger.debug(f'score.points : {score.points}, pd : {pd}, change : {score.points - pd}')
             delR[player.id] += (score.points - pd)
-            logger.debug(f'player elo = {playerElo}, opponent elo = {opponentElo}')
-        logger.debug(delR)
+            #logger.debug(f'player elo = {playerElo}, opponent elo = {opponentElo}')
+        #logger.debug(delR)
     for key, value in delR.items():
         player = Player.query.get(key)
-        change = value * 40 #Fixed as 40 for now
+        if Score.query.filter(Score.player_id == player.id).count() < 30:
+            k = 20
+        else:
+            k = 40
+        change = value * k #Fixed as 40 for now
         eloHistory = EloHistory(
             old_elo = player.elo,
             new_elo = player.elo + change,

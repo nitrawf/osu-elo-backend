@@ -17,12 +17,14 @@ with app.app_context():
             
             player_ids = [x[0] for x in db.session.query(Score.player_id).filter(Score.game_id == game.id).all()]
             z = Player.query.with_entities(func.avg(Player.elo).label('average')).filter(Player.id.in_(player_ids)).one()
-            logger.debug(f'average elo : {z}')
             game.avg_elo = z.average
+            for score in game.scores:
+                score.points =  1 - ((score.position - 1) / (len(game.scores) - 1)) ** 1.2
             db.session.add(game)
         db.session.add(match)
         try:
             calculateEloChange(match)
-        except:
-            logger.error('SOmething broke lol')
+        except Exception as e:
+            logger.error(f'Error processing {match.name} | {match.start_time} | {match.id} ')
+            #logger.exception(e)
             continue
