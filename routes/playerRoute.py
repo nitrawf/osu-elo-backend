@@ -14,8 +14,6 @@ def getAllPlayers():
 
 @playerBlueprint.route('<playerId>/summary')
 def getPlayer(playerId):
-    logger.debug(playerId)
-    logger.debug(type(playerId))
     try:
         playerId = int(playerId)
         player = PlayerSummary.query.get(playerId)
@@ -33,6 +31,11 @@ def getPlayerMatches(playerId):
 
 @playerBlueprint.route('<playerId>/elo-history')
 def getPlayerEloHistory(playerId):
+    try:
+        playerId = int(playerId)
+    except:
+        player = PlayerSummary.query.filter(PlayerSummary.name == playerId).one()
+        playerId = player.id
     data = db.session.query(Match, EloHistory) \
         .join(EloHistory, EloHistory.match_id == Match.id) \
         .filter(EloHistory.player_id == playerId).all()
