@@ -1,3 +1,4 @@
+from operator import index
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from osuApi import OsuApi
@@ -27,7 +28,7 @@ class Player(db.Model):
     country = db.Column(db.String(256))
     elo = db.Column(db.Integer)
     scores = db.relationship('Score', backref='player', lazy=True)
-
+    #matches = db.relationship('Match', secondary=player_match_xref, lazy='subquery', backref=db.backref('players', lazy=True), cascade="all, delete")
 
 class Game(db.Model):
     id = db.Column(db.Integer, primary_key = True)
@@ -70,7 +71,8 @@ class MatchSummary(db.Model):
     average_score = db.Column(db.Float)
     average_accuracy = db.Column(db.Float)
     average_position = db.Column(db.Float)
-    elo = db.Column(db.Integer)
+    old_elo = db.Column(db.Integer)
+    new_elo = db.Column(db.Integer)
     elo_change = db.Column(db.Integer)
 
 
@@ -132,6 +134,7 @@ class PlayerSummary(db.Model):
     average_score = db.Column(db.Float)
     average_accuracy = db.Column(db.Float)
     average_position = db.Column(db.Float)
+    player_rank = db.Column(db.Integer)
 
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
@@ -174,6 +177,12 @@ class PlayerSummarySchema(ma.SQLAlchemyAutoSchema):
         model = PlayerSummary
         load_instance = True
 
+class EloHistorySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = EloHistory
+        include_fk = True
+        load_instance = True
+
 matchSchema = MatchSchema()
 playerSchema = PlayerSchema()
 gameSchema = GameSchema()
@@ -181,3 +190,4 @@ beatmapSchema = BeatmapSchema()
 scoreSchema = ScoreSchema()
 matchSummarySchema = MatchSummarySchema()
 playerSummarySchema = PlayerSummarySchema()
+eloHistorySchema = EloHistorySchema()

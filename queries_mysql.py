@@ -13,7 +13,8 @@ create_match_summary_view = f'''
     round(avg(score.position), 2) as average_position,
     round(avg(score.score), 2) as average_score,
     round(avg(score.accuracy), 4) as average_accuracy,
-    elo_history.new_elo as elo,
+    elo_history.old_elo as old_elo,
+    elo_history.new_elo as new_elo,
     elo_history.elo_change as elo_change
     from `match` INNER join game on `match`.id = game.match_id
     inner join score on game.id = score.game_id
@@ -34,8 +35,11 @@ create_player_summary_view = f'''
     count(g.id) as maps_played,
     count(distinct m.id) as matches_played,
     round(avg(s.position), 2) as average_position,
-    round(avg(s.score), 4) as average_score,
-    round(avg(s.accuracy), 2) as average_accuracy
+    round(avg(s.score), 2) as average_score,
+    round(avg(s.accuracy), 4) as average_accuracy,
+    rank() over (
+	order by p.elo desc
+    ) player_rank
     from 
     player p 
     join score s on p.id = s.player_id
