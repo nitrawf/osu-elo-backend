@@ -1,6 +1,6 @@
 from flask import Blueprint
 from flask.json import jsonify
-from models import (EloHistory, Player, PlayerSummary, eloHistorySchema,
+from models import (EloHistory, Player, playerSchema, PlayerSummary, eloHistorySchema,
                     matchSchema, playerSummarySchema, db, Match)
 from utils import getLogger
 
@@ -40,3 +40,13 @@ def getPlayerEloHistory(playerId):
         .join(EloHistory, EloHistory.match_id == Match.id) \
         .filter(EloHistory.player_id == playerId).all()
     return jsonify([{**eloHistorySchema.dump(y), **matchSchema.dump(x)} for (x, y) in data])
+
+@playerBlueprint.route('search/')
+def searchPlayersAll():
+    players = Player.query.limit(5).all()
+    return jsonify([playerSchema.dump(x) for x in players])
+
+@playerBlueprint.route('search/<query>')
+def searchPlayers(query):
+    players = Player.query.filter(Player.name.contains(query)).limit(5).all()
+    return jsonify([playerSchema.dump(x) for x in players])
