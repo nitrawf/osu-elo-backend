@@ -1,8 +1,12 @@
 from server import app, db, guard
 import os
-import queries
 from utils import initEloDiff
 from models import User
+
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith('mysql'):
+    import queries_mysql as queries
+else:
+    import queries
 
 with app.app_context():
     db.create_all()

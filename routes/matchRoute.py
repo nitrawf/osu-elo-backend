@@ -16,7 +16,11 @@ def getMatch(matchId):
     if Match.query.get(matchId) is not None:
         return {'error' : 'Match Already Exists'}
     resp = api.getMatch(matchId)
-    return getMatchDetails(resp) 
+    try:
+        out = getMatchDetails(resp)
+    except Exception as e:
+        return {'error' : str(e)}
+    return out
 
 @matchBlueprint.route('new/process-match', methods = ['POST'])
 @auth_required

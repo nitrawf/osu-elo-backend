@@ -70,7 +70,10 @@ def parseMatch(data, filteredGameList, filteredPlayerList, defaultElo):
 
 
 def getMatchDetails(data):
-    playerList = parsePlayers(data['users'])
+    try:
+        playerList = parsePlayers(data['users'])
+    except:
+        raise Exception('Unable to parse the match. Please check the match id.')
     beatmapList = parseBeatmaps(data['events'])
     return {
         'players' : [playerSchema.dump(x) for x in playerList],
