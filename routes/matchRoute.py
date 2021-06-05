@@ -1,7 +1,8 @@
 from re import match
+import re
 from flask import Blueprint, jsonify, g
 from flask.globals import request
-from utils import getMatchDetails, parseMatch, getLogger, fetchMatchSummary, calculateEloChange
+from utils import addAbandonedMatch, getMatchDetails, parseMatch, getLogger, fetchMatchSummary, calculateEloChange
 from models import Match, matchSchema, api, db
 from flask_praetorian import auth_required
 
@@ -86,7 +87,11 @@ def eloChange(matchId):
         logger.exception(e)
         return jsonify('fail'), 500
 
-
-
+@matchBlueprint.route('new/abandoned', methods=['POST'])
+@auth_required
+def addAbandoned():
+    data = request.json
+    match = addAbandonedMatch(data['p1Id'], data['p2Id'], data['nMaps'])
+    return jsonify(matchSchema.dump(match))
 
 

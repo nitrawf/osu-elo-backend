@@ -10,7 +10,7 @@ from routes.matchRoute import matchBlueprint
 from routes.playerRoute import playerBlueprint
 from sqlalchemy.sql import func
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../osu-elo-frontend/build', static_url_path='/')
 app.config["DEBUG"] = True
 app.config["JWT_ACCESS_LIFESPAN"] = {'hours' : 24}
 app.config['JWT_REFRESH_LIFESPAN'] = {'days' : 30}

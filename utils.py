@@ -170,6 +170,27 @@ def fetchMatchSummary(id):
     logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]
 
+
+def processDelR(delR: dict, matchId: int):
+    for key, value in delR.items():
+        player = Player.query.get(key)
+        if Score.query.filter(Score.player_id == player.id).count() > 400:
+            k = 20
+        else:
+            k = 40
+        change = value * k #Fixed as 40 for now
+        eloHistory = EloHistory(
+            old_elo = player.elo,
+            new_elo = player.elo + change,
+            elo_change = change,
+            match_id = matchId,
+            player_id = key
+        )
+        db.session.add(eloHistory)
+        player.elo = player.elo + change
+        db.session.add(player)
+    db.session.commit()
+
 def calculateEloChange(match : Match):
     ''' Refer: https://handbook.fide.com/chapter/B022017 for details '''
     games = match.games
@@ -194,24 +215,8 @@ def calculateEloChange(match : Match):
             delR[player.id] += (score.points - pd)
             #logger.debug(f'player elo = {playerElo}, opponent elo = {opponentElo}')
         #logger.debug(delR)
-    for key, value in delR.items():
-        player = Player.query.get(key)
-        if Score.query.filter(Score.player_id == player.id).count() > 400:
-            k = 20
-        else:
-            k = 40
-        change = value * k #Fixed as 40 for now
-        eloHistory = EloHistory(
-            old_elo = player.elo,
-            new_elo = player.elo + change,
-            elo_change = change,
-            match_id = match.id,
-            player_id = key
-        )
-        db.session.add(eloHistory)
-        player.elo = player.elo + change
-        db.session.add(player)
-    db.session.commit()
+    processDelR(delR, match.id)
+
 
 
 def initEloDiff():
@@ -226,3 +231,49 @@ def initEloDiff():
                     low=z[i][3]
                 )
                 db.session.add(eloDiff)
+
+def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int) -> Match:
+    minMatchId = min(db.session.query(func.min(Match.id).label('min_id')).one().min_id, 0) - 1
+
+    p1 = Player.query.get(p1Id)
+    p2 = Player.query.get(p2Id)
+
+    match = Match(
+        id=minMatchId,
+        name='Abandoned Match',
+        start_time=datetime.now(),
+        end_time=datetime.now(),
+        players=[p1, p2],
+        games=[]   
+    )
+
+    db.session.add(match)
+    
+    eloDiff = min(abs(p1.elo - p2.elo), 400)
+    delR = defaultdict(lambda : 0)
+    
+    for _ in range(n_maps):
+        for player in [p1, p2]:
+
+            if player == p1:
+                points = 1
+                opponentElo = p2.elo
+            else:
+                points = 0
+                opponentElo = p1.elo
+            
+            row = EloDiff.query.filter(EloDiff.ll <= eloDiff, EloDiff.ul >= eloDiff).one()
+            if player.elo >= opponentElo:
+                pd = row.high
+            else:
+                pd = row.low
+            
+            logger.debug(f'score.points : {points}, pd : {pd}, change : {points - pd}')
+            delR[player.id] += (points - pd)
+            logger.debug(f'player elo = {player.elo}, opponent elo = {opponentElo}')
+        
+        logger.debug(delR)
+    
+    processDelR(delR, match.id)
+
+    return match
