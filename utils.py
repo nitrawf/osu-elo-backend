@@ -174,7 +174,7 @@ def fetchMatchSummary(id):
 def processDelR(delR: dict, matchId: int):
     for key, value in delR.items():
         player = Player.query.get(key)
-        if Score.query.filter(Score.player_id == player.id).count() > 400:
+        if Score.query.filter(Score.player_id == player.id).count() > 300:
             k = 20
         else:
             k = 40
