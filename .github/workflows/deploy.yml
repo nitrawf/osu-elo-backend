@@ -30,5 +30,6 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
         script: |
           cd /home/azureuser/osu-elo-backend
-          pipenv install
-          sudo systemctl reload react-flask-app
+          python3 -m pipenv install
+          sudo systemctl daemon-reload
+          sudo systemctl start react-flask-app
