@@ -31,5 +31,4 @@ jobs:
         script: |
           cd /home/azureuser/osu-elo-backend
           python3 -m pipenv install
-          sudo systemctl daemon-reload
-          sudo systemctl start react-flask-app
+          sudo systemctl restart react-flask-app
