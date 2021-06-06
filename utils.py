@@ -232,7 +232,7 @@ def initEloDiff():
                 )
                 db.session.add(eloDiff)
 
-def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int) -> Match:
+def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int, match_name: str) -> Match:
     minMatchId = min(db.session.query(func.min(Match.id).label('min_id')).one().min_id, 0) - 1
 
     p1 = Player.query.get(p1Id)
@@ -240,7 +240,7 @@ def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int) -> Match:
 
     match = Match(
         id=minMatchId,
-        name='Abandoned Match',
+        name=match_name,
         start_time=datetime.now(),
         end_time=datetime.now(),
         players=[p1, p2],

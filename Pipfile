@@ -10,7 +10,6 @@ flask-marshmallow = "*"
 marshmallow-sqlalchemy = "*"
 gunicorn = "*"
 flask-cors = "*"
-psycopg2 = "*"
 flask-praetorian = "*"
 mysqlclient = "*"
 

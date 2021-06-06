@@ -91,7 +91,7 @@ def eloChange(matchId):
 @auth_required
 def addAbandoned():
     data = request.json
-    match = addAbandonedMatch(data['p1Id'], data['p2Id'], data['nMaps'])
+    match = addAbandonedMatch(int(data['winnerId']), int(data['loserId']), int(data['numMaps']), data['matchName'])
     return jsonify(matchSchema.dump(match))
 
 

@@ -50,3 +50,16 @@ def searchPlayersAll():
 def searchPlayers(query):
     players = Player.query.filter(Player.name.contains(query)).limit(5).all()
     return jsonify([playerSchema.dump(x) for x in players])
+
+@playerBlueprint.route('<playerId>/validate')
+def validatePlayer(playerId):
+    try:
+        player = Player.query.get(int(playerId))
+        if player is None:
+            return jsonify({'error' : f'Player {playerId} not registered.'})
+        else:
+            return jsonify({'name': player.name})
+    except Exception as e:
+        logger.exception(e)
+        return jsonify({'error' : f'Player {playerId} not registered.'})
+
