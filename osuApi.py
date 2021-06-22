@@ -5,12 +5,15 @@ import logging
 logger = logging.getLogger(f'eloApp.{__name__}')
 
 class OsuApi():
+    # Python wrapper for osu api v2 
+    # Refer https://osu.ppy.sh/docs/index.html for official documentation
+
     def __init__(self, clientId=os.environ.get('OSU_CLIENT_ID'), clientSecret=os.environ.get('OSU_CLIENT_SECRET'), grantType="client_credentials", scope="public"):
         self.clientId = clientId
         self.clientSecret = clientSecret
         self.grantType = grantType
         self.scope = scope
-        self.baseUrl = "https://osu.ppy.sh/api/v2/"
+        self.baseUrl = "https://osu.ppy.sh/api/v2"
         self.token = None
         
     
@@ -39,5 +42,9 @@ class OsuApi():
                         }
 
     def getMatch(self, matchId):
-        r = requests.get(f'{self.baseUrl}matches/{matchId}', headers=self.headers)
+        r = requests.get(f'{self.baseUrl}/matches/{matchId}', headers=self.headers)
+        return r.json()
+    
+    def getUser(self, userId):
+        r = requests.get(f'{self.baseUrl}/users/{userId}/osu?key=id', headers=self.headers)
         return r.json()

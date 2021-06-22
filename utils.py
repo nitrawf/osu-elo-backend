@@ -2,9 +2,10 @@ import logging
 import os
 from datetime import datetime, timedelta
 import csv
-from models import EloHistory, Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema, EloDiff
+from models import EloHistory, Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema, EloDiff, api
 from sqlalchemy.sql import func
 from collections import defaultdict
+
 
 def getLogger(appName, moduleName=None):
     if moduleName != None:
@@ -232,11 +233,28 @@ def initEloDiff():
                 )
                 db.session.add(eloDiff)
 
+
+def getPlayerObj(id):
+    user = api.getUser(id)
+    # Initialize player object with 1000 as default ELO
+    player = Player(
+        id=user['id'],
+        name=user['username'],
+        country=user['country']['code'],
+        elo=1000
+    ) 
+    return player
+
 def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int, match_name: str) -> Match:
     minMatchId = min(db.session.query(func.min(Match.id).label('min_id')).one().min_id, 0) - 1
 
+    # Check if player is already registered else create a new object
     p1 = Player.query.get(p1Id)
+    if p1 is None:
+        p1 = getPlayerObj(p1Id)
     p2 = Player.query.get(p2Id)
+    if p2 is None:
+        p2 = getPlayerObj(p2Id)
 
     match = Match(
         id=minMatchId,

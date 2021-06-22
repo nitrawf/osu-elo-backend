@@ -20,8 +20,6 @@ def getPlayer(playerId):
     except:   
         player = PlayerSummary.query.filter(PlayerSummary.name == playerId).one()
     out = playerSummarySchema.dump(player)
-    out.pop('average_position') # Fix later
-    out.pop('total_points')
     return jsonify(out)
 
 @playerBlueprint.route('<playerId>/matches')

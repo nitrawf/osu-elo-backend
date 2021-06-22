@@ -24,25 +24,42 @@ create_match_summary_view = f'''
     '''
 drop_player_summary_table = 'drop table if exists player_summary'
 create_player_summary_view = f'''
-    create or replace view player_summary
-    as
+    create or replace view player_summary as
+    with t1 as (
+        select
+            p.id as player_id,
+            p.name, 
+            p.elo,
+            s.accuracy,
+            s.score,
+            s.points,
+            g.id as game_id,
+            m.id as match_id,
+            s.position,
+        dense_rank() over (
+            partition by p.id 
+            order by m.start_time desc
+        ) rnk
+        from player p
+        left join score s on p.id = s.player_id
+        left join game g on s.game_id = g.id
+        left join `match` m on g.match_id = m.id
+    )
     select 
-    p.id as id,
-    p.name as name,
-    p.elo as elo,
-    sum(s.score) as total_score,
-    round(sum(s.points), 2) as total_points,
-    count(g.id) as maps_played,
-    count(distinct m.id) as matches_played,
-    round(avg(s.position), 2) as average_position,
-    round(avg(s.score), 2) as average_score,
-    round(avg(s.accuracy), 4) as average_accuracy,
-    rank() over (
-	order by p.elo desc
-    ) player_rank
+        player_id as id,
+        name,
+        elo,
+        coalesce(sum(score), 0) as total_score,
+        coalesce(round(sum(points), 2), 0) as total_points,
+        count(game_id) as maps_played,
+        count(distinct match_id) as matches_played,
+        coalesce(round(avg(position), 2), 0) as average_position,
+        coalesce(round(avg(score), 2), 0) as average_score,
+        coalesce(round(sum(accuracy * POW(0.95, (rnk - 1))) / sum(POW(0.95, (rnk - 1))), 4), 0) as average_accuracy,
+        rank() over (
+        order by elo desc
+        ) player_rank
     from 
-    player p 
-    join score s on p.id = s.player_id
-    join game g on s.game_id = g.id
-    join `match` m on g.match_id = m.id
-    group by p.id;'''
+        t1
+    group by 
+        id;'''
