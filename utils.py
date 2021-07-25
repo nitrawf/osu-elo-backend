@@ -1,10 +1,14 @@
+import csv
 import logging
 import os
-from datetime import datetime, timedelta
-import csv
-from models import EloHistory, Match, db, playerSchema, beatmapSchema, Player, Beatmap, Score, Game, scoreSchema, gameSchema, MatchSummary, matchSummarySchema, EloDiff, api
-from sqlalchemy.sql import func
 from collections import defaultdict
+from datetime import datetime, timedelta
+
+from sqlalchemy.sql import func
+
+from models import (Beatmap, EloDiff, EloHistory, Game, Match, MatchSummary,
+                    Player, Score, api, beatmapSchema, db, gameSchema,
+                    matchSummarySchema, playerSchema, scoreSchema)
 
 
 def getLogger(appName, moduleName=None):
@@ -146,10 +150,10 @@ def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
     return gameList, beatmapList
 
 
-def parseScores(scoresUnfiltered, gameid , filter):
+def parseScores(scoresUnfiltered, gameid , filter): 
     scoreList = []
     scores = [x for x in scoresUnfiltered if x['user_id'] in filter]
-    if len(scores) < 2:# Not counted if only 1 player played the map.
+    if len(scores) < 2: # Not counted if only 1 player played the map.
         return None
     scores =  sorted(scores, key=lambda x: x['score'], reverse=True)
     for i in range(len(scores)):
@@ -166,13 +170,13 @@ def parseScores(scoresUnfiltered, gameid , filter):
         scoreList.append(score)
     return scoreList
 
-def fetchMatchSummary(id):
+def fetchMatchSummary(id: int) -> list:
     matchSummary = MatchSummary.query.filter_by(match_id = id).all()
     logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]
 
 
-def processDelR(delR: dict, matchId: int):
+def processDelR(delR: dict, matchId: int) -> None:
     for key, value in delR.items():
         player = Player.query.get(key)
         if Score.query.filter(Score.player_id == player.id).count() > 300:
@@ -192,7 +196,7 @@ def processDelR(delR: dict, matchId: int):
         db.session.add(player)
     db.session.commit()
 
-def calculateEloChange(match : Match):
+def calculateEloChange(match: Match) -> None:
     ''' Refer: https://handbook.fide.com/chapter/B022017 for details '''
     games = match.games
     delR = defaultdict(lambda : 0)
@@ -220,7 +224,7 @@ def calculateEloChange(match : Match):
 
 
 
-def initEloDiff():
+def initEloDiff() -> None:
     if EloDiff.query.count() == 0:
         with open("elo_diff.csv") as f:
             z = list(csv.reader(f))
@@ -234,7 +238,7 @@ def initEloDiff():
                 db.session.add(eloDiff)
 
 
-def getPlayerObj(id):
+def getPlayerObj(id: int) -> Player:
     user = api.getUser(id)
     # Initialize player object with 1000 as default ELO
     player = Player(
