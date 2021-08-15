@@ -41,10 +41,20 @@ class OsuApi():
                             "Authorization" : f"Bearer {self.token}"
                         }
 
-    def getMatch(self, matchId):
+    def getMatch(self, matchId, retry=0):
+        if retry > 3:
+            return({'error': 'authentication failure'})
         r = requests.get(f'{self.baseUrl}/matches/{matchId}', headers=self.headers)
+        if r.status_code == 401:
+            self.connect()
+            self.getMatch(matchId, retry + 1)
         return r.json()
     
-    def getUser(self, userId):
+    def getUser(self, userId, retry=0):
+        if retry > 3:
+            return({'error': 'authentication failure'})
         r = requests.get(f'{self.baseUrl}/users/{userId}/osu?key=id', headers=self.headers)
+        if r.status_code == 401:
+            self.connect()
+            self.getUser(userId, retry + 1)
         return r.json()

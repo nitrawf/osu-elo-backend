@@ -2,5 +2,5 @@
 logs/
 *.db
 __pycache__/
-dump.txt
+dump.*
 createUser.py

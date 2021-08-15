@@ -20,7 +20,7 @@ def getMatch(matchId):
     try:
         out = getMatchDetails(resp)
     except Exception as e:
-        return {'error' : str(e)}
+        return {'error' : 'failed to parse match'}
     return out
 
 @matchBlueprint.route('new/process-match', methods = ['POST'])
