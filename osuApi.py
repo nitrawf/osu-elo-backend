@@ -47,7 +47,7 @@ class OsuApi():
         r = requests.get(f'{self.baseUrl}/matches/{matchId}', headers=self.headers)
         if r.status_code == 401:
             self.connect()
-            self.getMatch(matchId, retry + 1)
+            return self.getMatch(matchId, retry + 1)
         return r.json()
     
     def getUser(self, userId, retry=0):
@@ -56,5 +56,5 @@ class OsuApi():
         r = requests.get(f'{self.baseUrl}/users/{userId}/osu?key=id', headers=self.headers)
         if r.status_code == 401:
             self.connect()
-            self.getUser(userId, retry + 1)
+            return self.getUser(userId, retry + 1)
         return r.json()
