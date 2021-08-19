@@ -7,6 +7,7 @@ from flask_praetorian import Praetorian
 from models import User, db, ma
 from routes.matchRoute import matchBlueprint
 from routes.playerRoute import playerBlueprint
+from routes.simulateRoute import simulateBlueprint
 from utils import getLogger, initEloDiff
 
 app = Flask(__name__)
@@ -35,6 +36,7 @@ ma.init_app(app)
 
 app.register_blueprint(matchBlueprint)
 app.register_blueprint(playerBlueprint)
+app.register_blueprint(simulateBlueprint)
 logger = getLogger('eloApp') 
 
 @app.route('/')

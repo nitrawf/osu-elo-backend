@@ -300,3 +300,37 @@ def addAbandonedMatch(p1Id: int, p2Id: int, n_maps: int, match_name: str) -> Mat
     processDelR(delR, match.id)
 
     return match
+
+def simulateElo(p1Elo: int, p2Elo: int, p1Wins: int, p2Wins: int) -> int:
+    eloDiff = min(abs(p1Elo - p2Elo), 400)
+    eloRow = EloDiff.query.filter(EloDiff.ll <= eloDiff, EloDiff.ul >= eloDiff).one()
+    k = 40
+    output = {}
+    delR = defaultdict(lambda : 0)
+    
+    if p1Elo > p2Elo:
+        p1M = eloRow.high
+        p2M = eloRow.low
+    else:
+        p2M = eloRow.high
+        p1M = eloRow.low
+
+
+    delR['p1'] += (1 - p1M) * p1Wins
+    delR['p2'] += (0 - p2M) * p1Wins
+    
+    delR['p1'] += (0 - p1M) * p2Wins
+    delR['p2'] += (1 - p2M) * p2Wins
+
+    output['p1Change'] = delR['p1'] * k
+    output['p2Change'] = delR['p2'] * k
+
+    return output
+
+
+    
+
+
+
+        
+    return output 
