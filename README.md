@@ -1,12 +1,12 @@
-Requirements:
-Python 3
-MySQL 8
+Requirements
+1. Python 3
+2. MySQL 8
 
-Environment Variables:
-ELO_DB_URL: 'mysql+mysqldb://{user}:{password}@{mysql_ip}/{db_name}'
-SECRET_KEY: Any random string used for encryption
-OSU_CLIENT_ID: Create osu! OAuth Application [https://osu.ppy.sh/home/account/edit] 
-OSU_CLIENT_SECRET Create osu! OAuth Application [https://osu.ppy.sh/home/account/edit] 
+Environment Variables:<br />
+ELO_DB_URL: 'mysql+mysqldb://{user}:{password}@{mysql_ip}/{db_name}'<br />
+SECRET_KEY: Any random string used for encryption<br />
+OSU_CLIENT_ID: Create osu! OAuth Application [https://osu.ppy.sh/home/account/edit]<br />
+OSU_CLIENT_SECRET Create osu! OAuth Application [https://osu.ppy.sh/home/account/edit]
 
 Getting started:
 1. Install Pipenv -> pip install pipenv
