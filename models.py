@@ -1,4 +1,3 @@
-from operator import index
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 from osuApi import OsuApi
@@ -135,7 +134,7 @@ class PlayerSummary(db.Model):
     average_accuracy = db.Column(db.Float)
     average_position = db.Column(db.Float)
     player_rank = db.Column(db.Integer)
-
+    last_played_days = db.Column(db.Integer)
 
 class MatchSchema(ma.SQLAlchemyAutoSchema):
     class Meta:

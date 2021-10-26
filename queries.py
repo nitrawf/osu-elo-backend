@@ -1,44 +1,65 @@
 drop_match_summary_table = 'drop table if exists match_summary'
 create_match_summary_view = f'''
     create or replace view match_summary
-    as 
+    as
     select
     player.id as player_id,
-    match.id as match_id,
+    `match`.id as match_id,
     elo_history.id as elo_id,
     player.name as player_name,
-    match.name as match_name,
+    `match`.name as match_name,
     sum(score.score) as total_score,
     sum(score.points) as total_points,
-    round(cast(avg(score.position) as numeric), 2) as average_position,
-    round(cast(avg(score.score) as numeric), 2) as average_score,
-    round(cast(avg(score.accuracy) as numeric), 2) as average_accuracy,
-    elo_history.new_elo as elo,
+    round(avg(score.position), 2) as average_position,
+    round(avg(score.score), 2) as average_score,
+    round(avg(score.accuracy), 4) as average_accuracy,
+    elo_history.old_elo as old_elo,
+    elo_history.new_elo as new_elo,
     elo_history.elo_change as elo_change
-    from match INNER join game on match.id = game.match_id
-    inner join score on game.id = score.game_id 
+    from `match` INNER join game on `match`.id = game.match_id
+    inner join score on game.id = score.game_id
     inner join player on player.id = score.player_id
-    inner join elo_history on (match.id = elo_history.match_id and player.id = elo_history.player_id)
-    group by player.id, match.id, elo_history.id;
+    inner join elo_history on (`match`.id = elo_history.match_id and player.id = elo_history.player_id)
+    group by player.id, `match`.id, elo_history.id;
     '''
 drop_player_summary_table = 'drop table if exists player_summary'
 create_player_summary_view = f'''
-    create or replace view player_summary
+    CREATE OR REPLACE VIEW player_summary
     as
-    select 
-    p.id as id,
-    p.name as name,
-    p.elo as elo,
-    sum(s.score) as total_score,
-    round(cast(sum(s.points) as numeric), 2) as total_points,
-    count(g.id) as maps_played,
-    count(distinct m.id) as matches_played,
-    round(cast(avg(s.position) as numeric), 2) as average_position,
-    round(cast(avg(s.score) as numeric), 2) as average_score,
-    round(cast(avg(s.accuracy) as numeric), 2) as average_accuracy
-    from 
-    player p 
-    join score s on p.id = s.player_id
-    join game g on s.game_id = g.id
-    join match m on g.match_id = m.id
-    group by p.id;'''
+    WITH t1 AS (
+        SELECT 
+            p.id AS player_id,
+            p.name AS name,
+            p.elo AS elo,
+            s.accuracy AS accuracy,
+            s.score AS score,
+            s.points AS points,
+            g.id AS game_id,
+            m.id AS match_id,
+            s.position AS position,
+            RANK() OVER (
+                PARTITION BY p.id 
+                ORDER BY m.start_time 
+                desc 
+            )  AS rnk,
+            m.start_time as match_start
+        FROM 
+            player p 
+            LEFT JOIN score s ON p.id = s.player_id 
+            LEFT JOIN game g ON s.game_id = g.id
+            LEFT JOIN `match` m ON g.match_id = m.id
+    ) 
+    SELECT 
+        t1.player_id AS id,
+        t1.name AS name,
+        t1.elo AS elo,
+        coalesce(SUM(t1.score),0) AS total_score,
+        coalesce(round(SUM(t1.points),2),0) AS total_points,
+        count(t1.game_id) AS maps_played,count(DISTINCT t1.match_id) AS matches_played,
+        coalesce(round(avg(t1.position),2),0) AS average_position,
+        coalesce(round(avg(t1.score),2),0) AS average_score,
+        coalesce(round((SUM((t1.accuracy * pow(0.95,(t1.rnk - 1)))) / SUM(pow(0.95,(t1.rnk - 1)))),4),0) AS average_accuracy,
+        rank() OVER (ORDER BY t1.elo desc )  AS player_rank,
+        coalesce(timestampdiff(day, max(match_start), current_timestamp()), 9999) as last_played_days
+    FROM t1
+    GROUP BY id;'''

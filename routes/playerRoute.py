@@ -12,6 +12,11 @@ def getAllPlayers():
     players = PlayerSummary.query.all()
     return jsonify([playerSummarySchema.dump(x) for x in players])
 
+@playerBlueprint.route('get-active')
+def getActivePlayers():
+    players = PlayerSummary.query.filter(PlayerSummary.last_played_days <= 120).all()
+    return jsonify([playerSummarySchema.dump(x) for x in players])
+
 @playerBlueprint.route('<playerId>/summary')
 def getPlayer(playerId):
     try:

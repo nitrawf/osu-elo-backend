@@ -9,6 +9,7 @@ from routes.matchRoute import matchBlueprint
 from routes.playerRoute import playerBlueprint
 from routes.simulateRoute import simulateBlueprint
 from utils import getLogger, initEloDiff
+import queries
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -21,13 +22,6 @@ guard.init_app(app, User)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('ELO_DB_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
-
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith('mysql'):
-    import queries_mysql as queries
-else:
-    import queries
-
-
 
 CORS(app)
 
@@ -77,17 +71,18 @@ def refresh():
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-        conn = db.engine.connect()
-        try:
-            conn.execute(queries.drop_match_summary_table)
-        except:
-            pass
-        try:
-            conn.execute(queries.drop_player_summary_table)
-        except:
-            pass
-        conn.execute(queries.create_player_summary_view)
-        conn.execute(queries.create_match_summary_view)
+        with db.engine.begin() as conn:
+            try:
+                conn.execute(queries.drop_match_summary_table)
+            except:
+                logger.exception('Match summary view does not exist.')
+            try:
+                conn.execute(queries.drop_player_summary_table)
+            except:
+                logger.exception('Player summary view does not exist.')
+            conn.execute(queries.create_player_summary_view)
+            conn.execute(queries.create_match_summary_view)
+
         if User.query.filter_by(username='admin').count() < 1:
             db.session.add(User(
                 username='admin',
@@ -97,4 +92,4 @@ if __name__ == "__main__":
         initEloDiff()
         db.session.commit()
        
-    app.run()
+    app.run(debug=True)
