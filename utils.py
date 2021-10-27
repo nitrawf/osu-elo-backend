@@ -173,7 +173,6 @@ def parseScores(scoresUnfiltered, gameid , filter):
 
 def fetchMatchSummary(id: int) -> list:
     matchSummary = MatchSummary.query.filter_by(match_id = id).all()
-    logger.debug(matchSummary)
     return [matchSummarySchema.dump(x) for x in matchSummary]
 
 
