@@ -325,11 +325,3 @@ def simulateElo(p1Elo: int, p2Elo: int, p1Wins: int, p2Wins: int) -> int:
     output['p2Change'] = delR['p2'] * k
 
     return output
-
-
-    
-
-
-
-        
-    return output 
