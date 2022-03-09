@@ -65,6 +65,7 @@ class MatchSummary(db.Model):
     match_id = db.Column(db.Integer, primary_key=True)
     elo_id = db.Column(db.Integer)
     player_name =  db.Column(db.String(256))
+    match_name = db.Column(db.String(256))
     total_score = db.Column(db.Integer)
     total_points = db.Column(db.Float)
     average_score = db.Column(db.Float)
