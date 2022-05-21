@@ -4,12 +4,13 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_praetorian import Praetorian
 
+import queries
 from models import User, db, ma
+from routes.beatmapRoute import beatmapBlueprint
 from routes.matchRoute import matchBlueprint
 from routes.playerRoute import playerBlueprint
 from routes.simulateRoute import simulateBlueprint
 from utils import getLogger, initEloDiff
-import queries
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
@@ -31,6 +32,7 @@ ma.init_app(app)
 app.register_blueprint(matchBlueprint)
 app.register_blueprint(playerBlueprint)
 app.register_blueprint(simulateBlueprint)
+app.register_blueprint(beatmapBlueprint)
 logger = getLogger('eloApp') 
 
 @app.route('/')

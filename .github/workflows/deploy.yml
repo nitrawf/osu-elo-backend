@@ -19,7 +19,7 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
       with:
         source: "."
-        target: "/home/azureuser/osu-elo-backend"
+        target: "/home/$USERNAME/osu-elo-backend"
 
     - name: Executing remote command
       uses: appleboy/ssh-action@master
@@ -29,6 +29,6 @@ jobs:
         PORT: ${{ secrets.PORT }}
         KEY: ${{ secrets.SSHKEY }}
         script: |
-          cd /home/azureuser/osu-elo-backend
+          cd /home/$USERNAME/osu-elo-backend
           python3 -m pipenv install
           sudo systemctl restart react-flask-app

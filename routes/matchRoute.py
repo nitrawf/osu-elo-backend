@@ -1,10 +1,9 @@
-from re import match
-import re
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify
 from flask.globals import request
-from utils import addAbandonedMatch, getMatchDetails, parseMatch, getLogger, fetchMatchSummary, calculateEloChange
-from models import Match, matchSchema, api, db
 from flask_praetorian import auth_required
+from models import Match, api, db, matchSchema
+from utils import (addAbandonedMatch, calculateEloChange, fetchMatchSummary,
+                   getLogger, getMatchDetails, parseMatch)
 
 matchBlueprint = Blueprint('matchbp', __name__, url_prefix='/api/match/')
 logger = getLogger('eloApp', __name__) 
@@ -93,5 +92,3 @@ def addAbandoned():
     data = request.json
     match = addAbandonedMatch(int(data['winnerId']), int(data['loserId']), int(data['numMaps']), data['matchName'])
     return jsonify(matchSchema.dump(match))
-
-
