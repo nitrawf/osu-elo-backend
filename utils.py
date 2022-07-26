@@ -3,12 +3,13 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
+from turtle import title
 
 from sqlalchemy.sql import func
 
 from models import (Beatmap, EloDiff, EloHistory, Game, Match, MatchSummary,
-                    Player, Score, api, beatmapSchema, db, gameSchema,
-                    matchSummarySchema, playerSchema, scoreSchema)
+                    Player, Score, api, beatmapSchema, db,
+                    matchSummarySchema, playerSchema)
 
 
 def getLogger(appName, moduleName=None):
@@ -108,11 +109,24 @@ def parseBeatmaps(events):
     for event in events:
         if 'game' in event:
             game_ = event['game']
-            beatmap_ = game_['beatmap']
-            beatmap = parseBeatmap(beatmap_)
-            beatmap.id = game_['id'] # Use game id instead of beatmap id for handling duplicates
+            if 'beatmap' in game_: 
+                beatmap_ = game_['beatmap']
+                beatmap = parseBeatmap(beatmap_)
+                beatmap.id = game_['id'] # Use game id instead of beatmap id for handling duplicates
+            else: # Deleted Beatmap
+                beatmap = getDummyBeatmap()
             beatmapList.append(beatmap)
     return beatmapList
+
+def getDummyBeatmap():
+    beatmap = Beatmap(
+            id = -1,
+            title = 'Some deleted beatmap',
+            artist = 'who knows lol'
+        )
+
+    return beatmap
+
 
 def parseBeatmap(beatmap_):
     beatmap = Beatmap()
@@ -131,10 +145,13 @@ def parseGames(events, matchid, filterBeatmap=None, filterPlayer=None):
     for event in events:
         if 'game' in event:
             game_ = event['game']
-            beatmap_ = game_['beatmap']
-            if filterBeatmap is not None and game_['id'] not in filterBeatmap:
-                continue
-            beatmap = parseBeatmap(beatmap_)
+            if 'beatmap' in game_:
+                beatmap_ = game_['beatmap']
+                if filterBeatmap is not None and game_['id'] not in filterBeatmap:
+                    continue
+                beatmap = parseBeatmap(beatmap_)
+            else:
+                beatmap_ = getDummyBeatmap()
             game = Game()
             game.id = game_['id']
             game.mods = ', '.join(game_['mods'])
