@@ -3,7 +3,6 @@ import logging
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta
-from turtle import title
 
 from sqlalchemy.sql import func
 
